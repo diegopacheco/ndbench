@@ -19,19 +19,9 @@ import com.netflix.ndbench.api.plugin.NdBenchClient;
 import com.netflix.ndbench.api.plugin.annotations.NdBenchClientPlugin;
 import com.netflix.ndbench.plugin.cass.CassJavaDriverPlugin;
 
-/**
- * This is a Elassandra(http://www.elassandra.io/) plugin using the CASS api. <BR> 
- * You need make sure you install Elassandra properly on top of your Cass database.
- * More details on elassandra installation here: http://doc.elassandra.io/en/latest/installation.html
- * 
- * This plugin will create the schema and will stress test Elassandra via Datastax driver.
- * 
- * @author diegopacheco
- *
- */
 @Singleton
-@NdBenchClientPlugin("ElassandraCassJavaDriverPlugin")
-public class ElassandraCassJavaDriverPlugin implements NdBenchClient{
+@NdBenchClientPlugin("Cass228JavaDriverPlugin")
+public class Cass228JavaDriverPlugin implements NdBenchClient{
     private static final Logger Logger = LoggerFactory.getLogger(CassJavaDriverPlugin.class);
 
     private Cluster cluster;
@@ -39,7 +29,7 @@ public class ElassandraCassJavaDriverPlugin implements NdBenchClient{
 
     private DataGenerator dataGenerator;
 
-    private String ClusterName = "Localhost", ClusterContactPoint ="172.28.198.16", KeyspaceName ="customer", TableName ="external";
+    private String ClusterName = "Test Cluster", ClusterContactPoint ="172.28.198.12", KeyspaceName ="customer_cass228", TableName ="external";
         
     private ConsistencyLevel WriteConsistencyLevel=ConsistencyLevel.LOCAL_ONE, ReadConsistencyLevel=ConsistencyLevel.LOCAL_ONE;
 
@@ -148,15 +138,14 @@ public class ElassandraCassJavaDriverPlugin implements NdBenchClient{
     }
 
     void upsertKeyspace(Session session) {
-        session.execute("CREATE KEYSPACE IF NOT EXISTS " + KeyspaceName +" WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': '1'}  AND durable_writes = true;");
-        //session.execute("CREATE KEYSPACE IF NOT EXISTS " + KeyspaceName +" WITH replication = {'class':'SimpleStrategy','replication_factor': 2};");
+        session.execute("CREATE KEYSPACE IF NOT EXISTS " + KeyspaceName +" WITH replication = {'class':'SimpleStrategy','replication_factor': 2} AND durable_writes = true;");
         session.execute("Use " + KeyspaceName);
     }
     
     void upsertCF(Session session) {
         session.execute("CREATE TABLE IF NOT EXISTS "+ TableName +" (\"_id\" text PRIMARY KEY, name list<text>) WITH bloom_filter_fp_chance = 0.01 " + 
         		       " AND caching = '{\"keys\":\"ALL\", \"rows_per_partition\":\"NONE\"}'" + 
-        		       " AND comment = 'Auto-created by Elassandra' " + 
+        		       " AND comment = 'Auto-created by Cass' " + 
         		       " AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy'} " + 
         		       " AND compression = {'sstable_compression': 'org.apache.cassandra.io.compress.LZ4Compressor'} " + 
         		       " AND dclocal_read_repair_chance = 0.1  " + 
@@ -167,6 +156,5 @@ public class ElassandraCassJavaDriverPlugin implements NdBenchClient{
         		       " AND min_index_interval = 128 " + 
         		       " AND read_repair_chance = 0.0 " + 
         		       " AND speculative_retry = '99.0PERCENTILE'; ");
-        session.execute("CREATE CUSTOM INDEX IF NOT EXISTS elastic_external_name_idx ON customer.external (name) USING 'org.elasticsearch.cassandra.index.ExtendedElasticSecondaryIndex';");
     }
 }
