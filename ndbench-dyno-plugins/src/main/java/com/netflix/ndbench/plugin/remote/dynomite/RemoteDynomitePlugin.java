@@ -57,7 +57,7 @@ public class RemoteDynomitePlugin implements NdBenchClient {
 			@Override
 			public Collection<Host> getHosts() {
 				List<Host> hosts = new ArrayList<Host>();
-				hosts.add(new Host("127.0.0.1", 8102, "dc", Host.Status.Up));
+				hosts.add(new Host("127.0.0.1", 8102, "rack1", Host.Status.Up));
 				return hosts;
 			}
 		};
