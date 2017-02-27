@@ -3,6 +3,7 @@ package com.netflix.ndbench.plugin.remote.dynomite;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
@@ -13,7 +14,11 @@ import com.netflix.dyno.connectionpool.ConnectionPoolConfiguration.LoadBalancing
 import com.netflix.dyno.connectionpool.Host;
 import com.netflix.dyno.connectionpool.HostSupplier;
 import com.netflix.dyno.connectionpool.OperationResult;
+import com.netflix.dyno.connectionpool.TokenMapSupplier;
 import com.netflix.dyno.connectionpool.impl.ConnectionPoolConfigurationImpl;
+import com.netflix.dyno.connectionpool.impl.RetryNTimes;
+import com.netflix.dyno.connectionpool.impl.lb.AbstractTokenMapSupplier;
+import com.netflix.dyno.contrib.ArchaiusConnectionPoolConfiguration;
 import com.netflix.dyno.jedis.DynoJedisClient;
 import com.netflix.ndbench.api.plugin.DataGenerator;
 import com.netflix.ndbench.api.plugin.NdBenchClient;
@@ -57,16 +62,27 @@ public class RemoteDynomitePlugin implements NdBenchClient {
 			}
 		};
 
-		DynoJedisClient jClient = new DynoJedisClient.Builder()
-				.withApplicationName(ClusterName)
+		final String json = "[" + " {\"token\":\"" + "100" + "\",\"hostname\":\"" + "127.0.0.1" + "\",\"zone\":\"" + "rack1" + "\"}, " + " ]\"";
+		TokenMapSupplier testTokenMapSupplier = new AbstractTokenMapSupplier() {
+			@Override
+			public String getTopologyJsonPayload(String hostname) {
+				return json;
+			}
+
+			@Override
+			public String getTopologyJsonPayload(Set<Host> activeHosts) {
+				return json;
+			}
+		};
+
+		DynoJedisClient dynoClient = new DynoJedisClient.Builder().withApplicationName(ClusterName)
 				.withDynomiteClusterName(ClusterName)
-				.withHostSupplier(hSupplier)
-				.withCPConfig(
-						new ConnectionPoolConfigurationImpl("myCP")
-						 .withTokenSupplier(new LocalHttpEndpointBasedTokenMapSupplier(8102))
-						 .setLoadBalancingStrategy(LoadBalancingStrategy.TokenAware))
-				.build();
-		jedisClient.set(jClient);
+				.withCPConfig(new ArchaiusConnectionPoolConfiguration(ClusterName)
+						.withTokenSupplier(testTokenMapSupplier).setMaxConnsPerHost(1).setConnectTimeout(2000)
+						.setRetryPolicyFactory(new RetryNTimes.RetryFactory(1)))
+				.withHostSupplier(hSupplier).build();
+
+		jedisClient.set(dynoClient);
 	}
 
 	@Override
