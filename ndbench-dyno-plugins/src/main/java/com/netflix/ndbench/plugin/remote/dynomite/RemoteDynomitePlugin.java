@@ -26,7 +26,7 @@ import com.netflix.ndbench.plugin.local.dynomite.proxy.LocalHttpEndpointBasedTok
  *
  */
 @Singleton
-@NdBenchClientPlugin("LocalDynomiteProxyPlugin")
+@NdBenchClientPlugin("RemoteDynomitePlugin")
 public class RemoteDynomitePlugin implements NdBenchClient {
 
 	private static final Logger logger = LoggerFactory.getLogger(RemoteDynomitePlugin.class);
