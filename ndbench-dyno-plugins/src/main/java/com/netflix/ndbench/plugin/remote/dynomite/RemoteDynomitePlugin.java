@@ -1,29 +1,21 @@
 package com.netflix.ndbench.plugin.remote.dynomite;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Singleton;
-import com.netflix.dyno.connectionpool.ConnectionPoolConfiguration.LoadBalancingStrategy;
-import com.netflix.dyno.connectionpool.Host;
 import com.netflix.dyno.connectionpool.HostSupplier;
 import com.netflix.dyno.connectionpool.OperationResult;
 import com.netflix.dyno.connectionpool.TokenMapSupplier;
-import com.netflix.dyno.connectionpool.impl.ConnectionPoolConfigurationImpl;
 import com.netflix.dyno.connectionpool.impl.RetryNTimes;
-import com.netflix.dyno.connectionpool.impl.lb.AbstractTokenMapSupplier;
 import com.netflix.dyno.contrib.ArchaiusConnectionPoolConfiguration;
 import com.netflix.dyno.jedis.DynoJedisClient;
 import com.netflix.ndbench.api.plugin.DataGenerator;
 import com.netflix.ndbench.api.plugin.NdBenchClient;
 import com.netflix.ndbench.api.plugin.annotations.NdBenchClientPlugin;
-import com.netflix.ndbench.plugin.local.dynomite.proxy.LocalHttpEndpointBasedTokenMapSupplier;
 
 /**
  * 
@@ -52,35 +44,21 @@ public class RemoteDynomitePlugin implements NdBenchClient {
 
 		logger.info("Initing dyno jedis client");
 		logger.info("\nIniting RemoteDynomite Plugin: " + ClusterName);
+		
+		String seeds = System.getenv("DYNOMITE_SEEDS");
+		logger.info("Using Seeds: " + seeds );
 
-		HostSupplier hSupplier = new HostSupplier() {
-			@Override
-			public Collection<Host> getHosts() {
-				List<Host> hosts = new ArrayList<Host>();
-				hosts.add(new Host("127.0.0.1", 8102, "rack1", Host.Status.Up));
-				return hosts;
-			}
-		};
-
-		final String json = "[" + " {\"token\":\"" + "100" + "\",\"hostname\":\"" + "127.0.0.1" + "\",\"zone\":\"" + "rack1" + "\"}, " + " ]\"";
-		TokenMapSupplier testTokenMapSupplier = new AbstractTokenMapSupplier() {
-			@Override
-			public String getTopologyJsonPayload(String hostname) {
-				return json;
-			}
-
-			@Override
-			public String getTopologyJsonPayload(Set<Host> activeHosts) {
-				return json;
-			}
-		};
-
+		List<DynomiteNodeInfo> nodes = DynomiteSeedsParser.parse(seeds);
+		TokenMapSupplier tms = TokenMapSupplierFactory.build(nodes);
+		HostSupplier hs = HostSupplierFactory.build(nodes);
+		
+		
 		DynoJedisClient dynoClient = new DynoJedisClient.Builder().withApplicationName(ClusterName)
 				.withDynomiteClusterName(ClusterName)
 				.withCPConfig(new ArchaiusConnectionPoolConfiguration(ClusterName)
-						.withTokenSupplier(testTokenMapSupplier).setMaxConnsPerHost(1).setConnectTimeout(2000)
+						.withTokenSupplier(tms).setMaxConnsPerHost(1).setConnectTimeout(2000)
 						.setRetryPolicyFactory(new RetryNTimes.RetryFactory(1)))
-				.withHostSupplier(hSupplier).build();
+				.withHostSupplier(hs).build();
 
 		jedisClient.set(dynoClient);
 	}
