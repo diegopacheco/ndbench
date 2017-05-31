@@ -1,7 +1,6 @@
 package com.netflix.ndbench.plugin.remote.dynomite;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**

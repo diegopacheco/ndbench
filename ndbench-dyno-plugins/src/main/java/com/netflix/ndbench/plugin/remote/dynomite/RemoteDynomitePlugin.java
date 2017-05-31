@@ -47,18 +47,24 @@ public class RemoteDynomitePlugin implements NdBenchClient {
 		
 		String seeds = System.getenv("DYNOMITE_SEEDS");
 		logger.info("Using Seeds: " + seeds );
+		
+		String localRack = System.getenv("DYNOMITE_LOCAL_RACK");
+		logger.info("Using LOCAL_RACK: " + localRack );
 
 		List<DynomiteNodeInfo> nodes = DynomiteSeedsParser.parse(seeds);
 		TokenMapSupplier tms = TokenMapSupplierFactory.build(nodes);
 		HostSupplier hs = HostSupplierFactory.build(nodes);
 		
-		
 		DynoJedisClient dynoClient = new DynoJedisClient.Builder().withApplicationName(ClusterName)
 				.withDynomiteClusterName(ClusterName)
 				.withCPConfig(new ArchaiusConnectionPoolConfiguration(ClusterName)
-						.withTokenSupplier(tms).setMaxConnsPerHost(1).setConnectTimeout(2000)
-						.setRetryPolicyFactory(new RetryNTimes.RetryFactory(1)))
-				.withHostSupplier(hs).build();
+						.setLocalRack(localRack)
+						.withTokenSupplier(tms)
+						.setMaxConnsPerHost(1)
+						.setConnectTimeout(2000)
+						.setRetryPolicyFactory(new RetryNTimes.RetryFactory(3)))
+				.withHostSupplier(hs)
+				.build();
 
 		jedisClient.set(dynoClient);
 	}
