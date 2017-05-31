@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Singleton;
+import com.netflix.config.ConfigurationManager;
 import com.netflix.dyno.connectionpool.HostSupplier;
 import com.netflix.dyno.connectionpool.OperationResult;
 import com.netflix.dyno.connectionpool.TokenMapSupplier;
@@ -51,6 +52,8 @@ public class RemoteDynomitePlugin implements NdBenchClient {
 		String localRack = System.getenv("DYNOMITE_LOCAL_RACK");
 		logger.info("Using LOCAL_RACK: " + localRack );
 
+		ConfigurationManager.getConfigInstance().setProperty("dyno." +  ClusterName + ".retryPolicy","RetryNTimes:3:true");
+		
 		List<DynomiteNodeInfo> nodes = DynomiteSeedsParser.parse(seeds);
 		TokenMapSupplier tms = TokenMapSupplierFactory.build(nodes);
 		HostSupplier hs = HostSupplierFactory.build(nodes);
@@ -58,10 +61,10 @@ public class RemoteDynomitePlugin implements NdBenchClient {
 		DynoJedisClient dynoClient = new DynoJedisClient.Builder().withApplicationName(ClusterName)
 				.withDynomiteClusterName(ClusterName)
 				.withCPConfig(new ArchaiusConnectionPoolConfiguration(ClusterName)
-						.setLocalRack(localRack)
 						.withTokenSupplier(tms)
 						.setMaxConnsPerHost(1)
 						.setConnectTimeout(2000)
+						.setLocalRack(localRack)
 						.setRetryPolicyFactory(new RetryNTimes.RetryFactory(3)))
 				.withHostSupplier(hs)
 				.build();
