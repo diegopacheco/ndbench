@@ -40,7 +40,7 @@ public class CassJavaDriverPlugin implements NdBenchClient{
 
     private DataGenerator dataGenerator;
 
-    private String ClusterName = "Localhost", ClusterContactPoint ="127.0.0.1", KeyspaceName ="dev1", TableName ="emp";
+    private String ClusterName = "Localhost", ClusterContactPoint ="127.0.0.1", KeyspaceName ="cluster_test", TableName ="test";
     private ConsistencyLevel WriteConsistencyLevel=ConsistencyLevel.LOCAL_ONE, ReadConsistencyLevel=ConsistencyLevel.LOCAL_ONE;
 
     private PreparedStatement readPstmt;
@@ -150,7 +150,7 @@ public class CassJavaDriverPlugin implements NdBenchClient{
     }
 
     void upsertKeyspace(Session session) {
-        session.execute("CREATE KEYSPACE IF NOT EXISTS " + KeyspaceName +" WITH replication = {'class':'SimpleStrategy','replication_factor':1};");
+        session.execute("CREATE KEYSPACE IF NOT EXISTS " + KeyspaceName +" WITH replication = {'class':'SimpleStrategy','replication_factor':3};");
         session.execute("Use " + KeyspaceName);
     }
     void upsertCF(Session session) {
