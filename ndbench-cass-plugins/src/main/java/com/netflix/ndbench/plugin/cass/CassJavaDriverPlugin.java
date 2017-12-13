@@ -41,7 +41,7 @@ public class CassJavaDriverPlugin implements NdBenchClient{
     private DataGenerator dataGenerator;
 
     private String ClusterName = "Localhost", ClusterContactPoint ="127.0.0.1", KeyspaceName ="cluster_test", TableName ="test";
-    private ConsistencyLevel WriteConsistencyLevel=ConsistencyLevel.LOCAL_ONE, ReadConsistencyLevel=ConsistencyLevel.LOCAL_ONE;
+    private ConsistencyLevel WriteConsistencyLevel=ConsistencyLevel.TWO, ReadConsistencyLevel=ConsistencyLevel.TWO;
 
     private PreparedStatement readPstmt;
     private PreparedStatement writePstmt;
